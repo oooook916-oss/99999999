@@ -1,0 +1,586 @@
+/* ===========================
+   BASE LAYOUT
+   =========================== */
+
+#menu-display {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: auto;
+  font-family: "Ubuntu", system-ui, sans-serif;
+  background: transparent !important;
+  color: #e0e0e0;
+}
+
+#menu-display-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100%;
+  max-width: 1100px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 80px;
+}
+
+.logo {
+  width: 220px;
+  display: block;
+  margin: 0 auto 15px auto;
+  filter: drop-shadow(0 0 12px #5a5a5a);
+}
+
+/* ===========================
+   ZYNX LOGO
+   =========================== */
+
+.zynx-logo-container {
+  position: absolute;
+  top: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 5;
+  animation: fadeInDown 0.8s ease-out;
+}
+
+.zynx-logo {
+  width: 200px;
+  height: auto;
+ border-radius: 50%;
+  max-width: 70vw;
+  filter: drop-shadow(0 8px 25px rgba(0, 0, 0, 0.7));
+  transition: transform 0.3s ease, filter 0.3s ease, all 0.4s ease;
+  cursor: pointer;
+}
+
+.zynx-logo:hover {
+  transform: scale(1.05);
+  filter: drop-shadow(0 12px 35px rgba(0, 0, 0, 0.8)) brightness(1.2);
+  animation: colorShift 2s ease-in-out infinite;
+}
+
+@keyframes colorShift {
+  0% {
+    filter: drop-shadow(0 12px 35px rgba(20, 30, 50, 0.8)) brightness(1.2) hue-rotate(0deg) saturate(1.5);
+  }
+  25% {
+    filter: drop-shadow(0 12px 35px rgba(30, 50, 80, 0.8)) brightness(1.3) hue-rotate(60deg) saturate(1.8);
+  }
+  50% {
+    filter: drop-shadow(0 12px 35px rgba(40, 70, 100, 0.8)) brightness(1.4) hue-rotate(120deg) saturate(2);
+  }
+  75% {
+    filter: drop-shadow(0 12px 35px rgba(25, 45, 70, 0.8)) brightness(1.3) hue-rotate(180deg) saturate(1.7);
+  }
+  100% {
+    filter: drop-shadow(0 12px 35px rgba(20, 30, 50, 0.8)) brightness(1.2) hue-rotate(240deg) saturate(1.5);
+  }
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+/* ===========================
+   ZYNX BAR + CIRCLE
+   =========================== */
+
+#menu-overlay {
+  position: relative;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.control-bar-container {
+  position: relative;
+  width: 100%;
+  max-width: 750px;
+  pointer-events: none;
+  z-index: 3;
+  display: flex;
+  justify-content: center;
+}
+
+.control-bar {
+  width: 100%;
+  height: 130px; /* increased height */
+  background: linear-gradient(90deg, #222 0%, #2c2c2c 100%);
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.7);
+  position: relative;
+}
+
+/* ===========================
+   MODIFIED SECTION (BUTTON LAYOUT)
+   =========================== */
+
+.bar-button-container {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 690px;
+  height: 130px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  pointer-events: none;
+}
+
+/* left button area stays same */
+.left-buttons {
+  display: flex;
+  gap: 12px;
+  pointer-events: auto;
+}
+
+/* right empty container activated for play button */
+.right-slot {
+  width: 130px;
+  height: 130px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  pointer-events: auto;
+}
+
+.play-btn {
+  width: 90px;
+  height: 50px;
+  background: #2a2a2a;
+  border-radius: 8px;
+  color: #e0e0e0;
+  font-size: 13px;
+  font-weight: 700;
+  text-align: center;
+  line-height: 50px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.8);
+  transition: transform .2s ease, color .2s ease;
+  cursor: pointer;
+}
+
+.play-btn:hover {
+  transform: scale(1.1);
+  color: #fff;
+}
+
+/* background bars unchanged */
+.bar-bgs .bar-button-bg {
+  width: 127px;
+  height: 130px;
+  margin-left: 0;
+  margin-right: 0;
+  display: inline-block;
+  position: relative;
+  transform: skewX(-15deg) scaleY(1.05) scaleX(1.05);
+  background: linear-gradient(135deg, #2a2a2a 0%, #1f1f1f 100%);
+  box-shadow: inset 0 0 6px rgba(255,255,255,0.05);
+}
+
+.bar-button-bg.settings { border-radius: 4px 0 0 4px; }
+.bar-button-bg.dummy { width: 170px; }
+.bar-button-bg.theme { border-radius: 0 4px 4px 0; }
+.bar-buttons {
+  top: 0;
+}
+
+.bar-button {
+  cursor: pointer;
+  margin-top: 30px;
+  width: 125px;
+  color: #c2c2c2;
+  font-size: 10px;
+  text-align: center;
+  height: 50px;
+  display: inline-block;
+  transform: scale(1);
+  transition: transform .2s ease, color .2s ease;
+  pointer-events: auto;
+}
+
+.bar-button:hover {
+  transform: scale(1.1);
+  color: #ffffff;
+}
+
+.bar-button i { font-size: 32px; }
+.bar-button .text {
+  font-family: monospace;
+  text-transform: uppercase;
+  font-size: 13px;
+  font-weight: 600;
+  margin-top: 5px;
+}
+
+/* ===========================
+   CIRCLE
+   =========================== */
+
+.bar-circle-outer {
+  cursor: pointer;
+  width: 185px;
+  height: 185px;
+  position: absolute;
+  background: rgba(255,255,255,.05);
+  border-radius: 50%;
+  left: 50% !important;
+  top: 50% !important;
+  transform: translate(calc(-50% + 6px), -50%);
+  transition: transform .2s ease, box-shadow .2s ease;
+}
+
+.bar-circle-outer:hover {
+  transform: translate(calc(-50% + 6px), -50%) scale(1.05);
+  box-shadow: 0 0 25px rgba(255,255,255,0.12);
+}
+
+.bar-circle {
+  position: absolute;
+  width: 168px;
+  height: 168px;
+  margin: 8.5px;
+  background: #2c2c2c;
+  border-radius: 50%;
+  box-shadow: inset 0 4px 8px rgba(0,0,0,0.6);
+}
+
+.skin-preview {
+  width: 148px;
+  height: 148px;
+  border-radius: 50%;
+  margin: 10px;
+  background-color: #3a3a3a !important;
+  box-shadow: 0 0 12px rgba(0,0,0,0.6);
+  position: relative;
+  overflow: hidden;
+}
+
+.skin-preview::before,
+.skin-preview::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  width: 50%;
+  height: 100%;
+  background-size: cover !important;
+  background-position: center !important;
+}
+
+.skin-preview::before {
+  left: 0;
+  border-radius: 74px 0 0 74px;
+  background-image: var(--skin1-url, none);
+}
+
+.skin-preview::after {
+  right: 0;
+  border-radius: 0 74px 74px 0;
+  background-image: var(--skin2-url, none);
+}
+
+/* ===========================
+   CARD
+   =========================== */
+
+.menu-container {
+  position: absolute;
+  z-index: 2;
+  left: 50%;
+  top: calc(50% + 160px);
+  transform: translateX(-50%);
+  width: 400px;
+  max-width: 90vw;
+  padding: 22px 28px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  background: rgba(0,0,0,0.35);
+  backdrop-filter: blur(8px);
+  border-radius: 24px;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.9),
+              0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+
+/* ===========================
+   PLAYER INPUTS
+   =========================== */
+
+.player-inputs {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 0.4fr 1fr 1fr;
+  grid-auto-rows: auto;
+  column-gap: 10px;
+  row-gap: 10px;
+}
+
+.player-inputs input {
+  border-radius: 12px;
+  padding: 6px 10px;
+  border: 1px solid #111;
+  background: #2a2a2a;
+  color: #e0e0e0;
+  font-size: 12px;
+  outline: none;
+}
+
+.player-inputs #tag,
+.player-inputs #nickname,
+.player-inputs #nickname2,
+.player-inputs #customSkin1,
+.player-inputs #customSkin2 {
+  width: 90%;
+  margin: 0 auto;
+}
+
+.skin-row {
+  grid-column: 1 / 4;
+  display: grid;
+  grid-template-columns: 0.5fr 0.5fr;
+  column-gap: 1px 
+}
+
+
+.server-select-input {
+  width: 250px;
+  padding: 8px 16px;
+  border-radius: 999px;
+  background: #2a2a2a;
+  border: 1px solid #111;
+  color: #e0e0e0;
+  font-family: "Ubuntu", system-ui, sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+  outline: none;
+  margin: 0 auto;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.8);
+}
+
+.server-select-input:focus {
+  border-color: #aaa;
+  box-shadow: 0 0 0 1px rgba(180,180,180,0.6), 0 10px 22px rgba(0,0,0,0.9);
+}
+
+
+
+@media (max-width: 900px) {
+  #menu-display-center { max-width: 100%; gap: 100px; }
+  .control-bar-container { max-width: 100%; }
+  .player-inputs { grid-template-columns: 1fr; }
+}
+
+#chat-input {
+  position: absolute;
+  left: 14px;
+  bottom: 14px;
+  width: 320px;
+  max-width: 45vw;
+}
+.server-bar {
+    background: #111;
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    margin-bottom: 6px;
+    text-align: center;
+}
+
+.server-bar.active {
+    background: #222;
+    outline: 2px solid #fff;
+}
+
+/* Update Notification Panel */
+.update-notification {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 99999;
+  pointer-events: auto;
+  animation: slideIn 0.3s ease-out;
+}
+
+.update-notification.hidden {
+  display: none;
+}
+
+.update-notification-content {
+  background: linear-gradient(135deg, rgba(25, 25, 35, 0.98) 0%, rgba(35, 35, 50, 0.98) 100%);
+  border-radius: 16px;
+  padding: 24px;
+  min-width: 380px;
+  max-width: 90vw;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8),
+              0 0 0 1px rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.update-notification-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  color: #e8e8e8;
+}
+
+.update-notification-header i {
+  font-size: 24px;
+  color: #4a9eff;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.update-notification-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.update-notification-body {
+  margin-bottom: 20px;
+}
+
+.update-notification-body p {
+  margin: 0;
+  color: #d0d0d0;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.update-notification-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.update-btn {
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: none;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: 'Ubuntu', sans-serif;
+}
+
+.update-btn {
+  background: linear-gradient(135deg, #4a9eff 0%, #3a7ecc 100%);
+  color: white;
+  box-shadow: 0 4px 15px rgba(74, 158, 255, 0.3);
+}
+
+.update-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(74, 158, 255, 0.4);
+}
+
+.update-btn.secondary {
+  background: rgba(255, 255, 255, 0.1);
+  color: #e8e8e8;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.update-btn.secondary:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -45%);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+@media (max-width: 500px) {
+  .update-notification-content {
+    min-width: 320px;
+    padding: 20px;
+  }
+  
+  .update-notification-actions {
+    flex-direction: column;
+  }
+  
+  .update-btn {
+    width: 100%;
+  }
+}
+
+/* Info button and panel (attached to menu) */
+.info-button {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 90px;
+  height: 50px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+  z-index: 10;
+}
+
+.info-button i { font-size: 22px; }
+
+
+.info-panel {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 420px;
+  max-width: 92vw;
+  background: rgba(18,18,18,0.96);
+  color: #e8e8e8;
+  border-radius: 12px;
+  padding: 18px 18px 16px 18px;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.8);
+  z-index: 99999;
+  font-size: 13px;
+  line-height: 1.35;
+  pointer-events: auto;
+}
+
+.info-panel.hidden { display: none; }
+.info-panel h3 { margin: 0 0 8px 0; font-size: 15px; }
+.info-panel ul { margin: 6px 0 8px 18px; padding: 0; }
+.info-panel .info-footer { margin-top: 8px; font-size: 12px; opacity: 0.85; }
+.info-panel-close { position: absolute; top: 8px; right: 10px; cursor: pointer; font-size: 14px; }
+
+@media (max-width: 700px) {
+  .info-panel { right: 6px; left: 6px; width: auto; }
+  .info-button { right: 6px; top: 6px; }
+}

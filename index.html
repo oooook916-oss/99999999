@@ -1,0 +1,1047 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>𝐙𝐲𝐧𝐗-Private update 1.2</title>          
+  <link rel="icon" href="./assets/images/icon.ico" type="image/x-icon">
+  <link href="./assets/css/main.css" rel="stylesheet">
+
+  <script src="./loader.js"></script>
+  
+
+  <script>
+  
+    (function initUpdateNotification() {
+      const UPDATE_VERSION = '1.2.1'; 
+      const STORAGE_KEY = 'zynx_update_seen';
+      
+      function showUpdateNotification() {
+        const lastSeenVersion = localStorage.getItem(STORAGE_KEY);
+        
+        
+        if (lastSeenVersion !== UPDATE_VERSION) {
+          const notification = document.getElementById('update-notification');
+          const message = document.getElementById('update-message');
+          
+          // Get player name from first nickname input with multiple fallbacks
+          let playerNick = 'Player';
+          
+          // Try immediate access
+          const nickInput = document.getElementById('nickname');
+          if (nickInput && nickInput.value && nickInput.value.trim()) {
+            playerNick = nickInput.value.trim();
+          } else {
+            // Try to get from localStorage as fallback
+            try {
+              const savedNick = localStorage.getItem('nickname') || localStorage.getItem('playerName') || localStorage.getItem('userNickname');
+              if (savedNick && savedNick.trim()) {
+                playerNick = savedNick.trim();
+              }
+            } catch (e) {
+              console.warn('Could not get saved nickname:', e);
+            }
+          }
+          
+          console.log('Player name for notification:', playerNick);
+          message.textContent = `Hey ${playerNick}, some small updates are out! Check it in the Info panel.`;
+          
+          
+          setTimeout(() => {
+            notification.classList.remove('hidden');
+            console.log('Update notification shown');
+          }, 1000);
+          
+          document.getElementById('update-ok-btn').addEventListener('click', () => {
+            localStorage.setItem(STORAGE_KEY, UPDATE_VERSION);
+            notification.classList.add('hidden');
+          });
+          
+          
+          document.getElementById('update-info-btn').addEventListener('click', () => {
+            localStorage.setItem(STORAGE_KEY, UPDATE_VERSION);
+            notification.classList.add('hidden');
+            
+            console.log('View updates clicked, opening info panel on menu...');
+            
+          
+            const panel = document.getElementById('info-panel');
+            const menu = document.getElementById('menu-display');
+            const infoBtn = document.getElementById('menu-info-button');
+            
+            console.log('Panel:', panel, 'Menu:', menu, 'InfoBtn:', infoBtn);
+            
+            if (panel && menu) {
+              
+              menu.classList.remove('hidden');
+              menu.style.display = 'block';
+              menu.classList.add('visible');
+              
+             
+              panel.style.display = 'block';
+              panel.style.visibility = 'visible';
+              panel.classList.remove('hidden');
+              panel.style.zIndex = '99999';
+              
+              console.log('Info panel opened on menu');
+              
+              
+              if (infoBtn && typeof infoBtn.click === 'function') {
+                setTimeout(() => {
+                  if (panel.style.display === 'none' || !panel.classList.contains('hidden')) {
+                    infoBtn.click();
+                    console.log('Tried info button click as backup');
+                  }
+                }, 100);
+              }
+            } else {
+              console.error('Info panel or menu not found!');
+            }
+          });
+        }
+      }
+      
+      
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', showUpdateNotification);
+      } else {
+        showUpdateNotification();
+      }
+    })();
+  </script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const nick1 = document.getElementById('nickname');
+      const nick2 = document.getElementById('nickname2');
+  
+      if (!nick1 || !nick2) return;
+  
+      const NICK2_KEY = 'ZYX_nickname2';
+  
+     
+      try {
+        const savedNick2 = localStorage.getItem(NICK2_KEY);
+        if (savedNick2) {
+          nick2.value = savedNick2;
+        }
+      } catch (e) {
+       
+      }
+
+      let nicknameSyncTimeout = null;
+      let nick1Timeout = null;
+      let nick2Timeout = null;
+      let lastSentNick1 = '';
+      let lastSentNick2 = '';
+
+      function sendNick(clientIndex, value) {
+        const m = window.multibox;
+        if (!m || !Array.isArray(m.clients)) return;
+        const client = m.clients[clientIndex];
+        if (!client) return;
+        
+        const isClient0 = clientIndex === 0;
+        const lastSent = isClient0 ? lastSentNick1 : lastSentNick2;
+        if (value === lastSent) return;
+        
+        try {
+          client.sendPlayerInfo({ nickname: value });
+          console.log(`Sent nickname "${value}" to client ${clientIndex}`);
+          if (isClient0) {
+            lastSentNick1 = value;
+          } else {
+            lastSentNick2 = value;
+          }
+        } catch (e) {
+          console.warn('Failed to send nickname:', e);
+        }
+      }
+
+      function ensureCorrectNicknames() {
+        const m = window.multibox;
+        if (!m || !m.clients || !m.clients.length) return;
+  
+        const v1 = nick1.value.trim();
+        const v2 = nick2.value.trim();
+  
+        if (v1 && m.clients[0] && v1 !== lastSentNick1) {
+          sendNick(0, v1);
+        }
+        
+        if (m.clients[1] && v2 !== lastSentNick2) {
+          sendNickToChild(v2 || '', true);
+        }
+      }
+
+      nick1.addEventListener('input', () => {
+        clearTimeout(nick1Timeout);
+        nick1Timeout = setTimeout(() => {
+          const val = nick1.value.trim();
+          console.log(`First nickname full value: "${val}" (length: ${val.length})`);
+          sendNick(0, val);
+          setTimeout(() => {
+            if (nick2.value.trim()) {
+              sendNickToChild(nick2.value.trim());
+            }
+          }, 50);
+        }, 200);
+      });
+
+      nick2.addEventListener('input', () => {
+        clearTimeout(nick2Timeout);
+        nick2Timeout = setTimeout(() => {
+          const val = nick2.value.trim();
+          console.log(`Second nickname full value: "${val}" (length: ${val.length})`);
+          
+          try {
+            localStorage.setItem(NICK2_KEY, val);
+          } catch (e) {
+            console.warn('Failed to save nickname2 to localStorage:', e);
+          }
+          
+          sendNickToChild(val);
+          setTimeout(() => sendNickToChild(val), 100);
+          setTimeout(() => sendNickToChild(val), 300);
+        }, 500);
+      });
+
+      nick2.addEventListener('change', () => {
+        const val = nick2.value.trim();
+        console.log('Second nickname change event:', val);
+        sendNickToChild(val, true);
+        setTimeout(() => sendNickToChild(val, true), 100);
+      });
+
+      nick2.addEventListener('blur', () => {
+        const val = nick2.value.trim();
+        console.log('Second nickname blur event:', val);
+        sendNickToChild(val, true);
+        setTimeout(() => sendNickToChild(val, true), 100);
+      });
+
+      function sendNickToChild(value, force = false) {
+        const m = window.multibox;
+        if (!m || !Array.isArray(m.clients)) {
+          console.warn('Multibox not ready for nickname assignment');
+          return;
+        }
+        
+        const childClient = m.clients[1];
+        if (!childClient) {
+          console.warn('Child client (index 1) not available');
+          return;
+        }
+        
+        if (!force && value === lastSentNick2) {
+          console.log(`Skipping duplicate send: "${value}"`);
+          return;
+        }
+        
+        try {
+          console.log(`Sending to child: "${value}" (length: ${value.length})`);
+          childClient.sendPlayerInfo({ nickname: value });
+          lastSentNick2 = value;
+          console.log(`✓ Successfully sent nickname "${value}" to child client`);
+        } catch (e) {
+          console.error('Failed to send nickname to child client:', e);
+        }
+      }
+
+      setInterval(() => {
+        ensureCorrectNicknames();
+      }, 300);
+
+      const originalAddClient = window.multibox?.addClient;
+      if (originalAddClient) {
+        window.multibox.addClient = function(...args) {
+          const result = originalAddClient.apply(this, args);
+          setTimeout(ensureCorrectNicknames, 500);
+          setTimeout(ensureCorrectNicknames, 1000);
+          return result;
+        };
+      }
+
+      function interceptMainBundleNicknameLogic() {
+        const m = window.multibox;
+        if (!m || !m.clients || !m.clients.length) return;
+
+        if (!m.clients.originalForEach) {
+          m.clients.originalForEach = m.clients.forEach;
+        }
+
+        m.clients.forEach = function(callback, thisArg) {
+          const wrappedCallback = (client, index, array) => {
+            const result = callback.call(thisArg, client, index, array);
+            
+            setTimeout(() => {
+              const v1 = nick1.value.trim();
+              const v2 = nick2.value.trim();
+              
+              if (index === 0 && v1 && v1 !== lastSentNick1) {
+                try {
+                  client.sendPlayerInfo({ nickname: v1 });
+                  lastSentNick1 = v1;
+                  console.log(`✓ Overrode client 0 nickname to: "${v1}"`);
+                } catch (e) {
+                  console.warn('Failed to override client 0 nickname:', e);
+                }
+              }
+              
+              if (index === 1 && v2 !== lastSentNick2) {
+                try {
+                  client.sendPlayerInfo({ nickname: v2 || '' });
+                  lastSentNick2 = v2 || '';
+                  console.log(`✓ Overrode client 1 nickname to: "${v2 || ''}"`);
+                } catch (e) {
+                  console.warn('Failed to override client 1 nickname:', e);
+                }
+              }
+            }, 50);
+            return result;
+          };
+          
+          return this.originalForEach(wrappedCallback, thisArg);
+        };
+      }
+
+      setInterval(interceptMainBundleNicknameLogic, 500);
+      setTimeout(interceptMainBundleNicknameLogic, 50);
+
+      setTimeout(ensureCorrectNicknames, 500);
+      setTimeout(ensureCorrectNicknames, 1000);
+      setTimeout(ensureCorrectNicknames, 2000);
+    });
+  </script>
+
+ 
+  <div id="update-notification" class="update-notification hidden">
+    <div class="update-notification-content">
+      <div class="update-notification-header">
+        <i class="fas fa-bell"></i>
+        <h3>New Update Available!</h3>
+      </div>
+      <div class="update-notification-body">
+        <p id="update-message">Hey Player, a small update is out! Check it in the Info panel.</p>
+      </div>
+      <div class="update-notification-actions">
+        <button id="update-ok-btn" class="update-btn">OK</button>
+        <button id="update-info-btn" class="update-btn secondary">View Updates</button>
+      </div>
+    </div>
+  </div>
+
+  
+  <div id="info-panel" class="info-panel hidden">
+    <div class="info-panel-close" id="info-panel-close">✕</div>
+    <h3>Recent Updates (applied for you)</h3>
+    <div id="info-owner" class="info-owner"></div>
+    <div class="info-tabs" role="tablist" aria-label="Updates tabs">
+      <button class="info-tab-btn active" type="button" data-tab="small">Small Updates</button>
+      <button class="info-tab-btn" type="button" data-tab="bugs-fixed">Bugs Fixed</button>
+      <button class="info-tab-btn" type="button" data-tab="old">Old Updates</button>
+    </div>
+    <div class="info-tab-content active" data-tab-content="small" role="tabpanel">
+      <ul>
+        <li><strong>ZynX logo integration</strong>: Beautiful animated logo with color-changing effects added to the main menu.</li>
+        <li><strong>Key manager integration</strong>: Added 🔑 key icon next to key input for easy access to key management page.</li>
+      </ul>
+    </div>
+    <div class="info-tab-content" data-tab-content="bugs-fixed" role="tabpanel">
+      <ul>
+        <li><strong>ChatHUD toggle bug is been fixed</strong>: Resolved issues with ChatHUD toggle functionality not working properly.</li>
+      </ul>
+    </div>
+    <div class="info-tab-content" data-tab-content="old" role="tabpanel" style="max-height: 300px; overflow-y: auto;">
+      <ul>
+        <li><strong>Instant respawn system</strong>: No artificial delay - players can respawn immediately after death.</li>
+        <li>Cursor + cell delay issues have been fixed.</li>
+        <li>Cursor lines are centered on your cell, and you can change the cursor line color when you enable Cursor Lines.</li>
+        <li>Chat HUD restyled: compact, transparent black glass theme.</li>
+        <li>Join notification added: <strong>{name} has joined the chat</strong> (best-effort client-side).</li>
+        <li>Double-buffered renderer to reduce cell flicker.</li>
+        <li>Debounced resize, cached DOM and measureText to improve performance.</li>
+        <li>Reduced per-frame allocations and optimized rendering loops.</li>
+        <li>Settings persistence with debounced saves and sensible defaults.</li>
+        <li>Cursor tracker feature: draw line from your cells to cursor (toggleable).</li>
+        <li>Throttled/coalesced cursor sends to lower network/ping spikes.</li>
+        <li>Ping display (top-left) using accurate RTT measurement (fetch + performance.now).</li>
+        <li>Skin inputs fixed: persisted, preloaded, and applied to player info.</li>
+        <li><strong>Chat updates</strong> applied:</li>
+        <li>Heartbeat + exponential reconnect implemented to keep sockets alive.</li>
+        <li>WebSocket URL obfuscated to avoid plain-text exposure in client source.</li>
+        <li>Per-room socket metadata with silent reconnect tracking (no spammy logs).</li>
+        <li>Message dedupe and short-term cache to prevent duplicate messages.</li>
+        <li>Suppressed noisy system messages (connect/disconnect/error) and show a single initial "Connected to &lt;room&gt;" message per room.</li>
+      </ul>
+    </div>
+    <div class="info-footer">Updates applied at your request.</div>
+  </div>
+  
+</head>
+<body>
+
+  
+  <style>
+    #spectate {
+      margin-right: 50px;
+    }
+    #play {
+      margin-left: 70px;
+    }
+
+    .info-tabs {
+      display: flex;
+      gap: 8px;
+      margin: 10px 0 8px;
+    }
+
+    .info-tab-btn {
+      flex: 1;
+      padding: 8px 10px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: #e8e8e8;
+      font: inherit;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.2s ease, border-color 0.2s ease, transform 0.12s ease;
+    }
+
+    .info-tab-btn:hover {
+      background: rgba(255, 255, 255, 0.10);
+      border-color: rgba(255, 255, 255, 0.14);
+      transform: translateY(-1px);
+    }
+
+    .info-tab-btn.active {
+      background: rgba(255, 255, 255, 0.14);
+      border-color: rgba(255, 255, 255, 0.18);
+    }
+
+    .info-tab-content { display: none; }
+    .info-tab-content.active { display: block; }
+  </style>
+
+  
+  <canvas id="game-display"></canvas>
+
+
+  <div id="hud-display" class="pointer-events-none visible">
+    <canvas id="leaderboard-canvas" width="200"></canvas>
+  </div>
+  <canvas id="minimap-canvas"></canvas>
+
+  <div id="stats-display" class="pointer-events-none">
+    <div id="stats-fps">FPS: --</div>
+    <div id="stats-mass">Mass: --</div>
+  </div>
+
+  <div id="menu-display" class="pointer-events-all visible">
+    
+    <div class="zynx-logo-container">
+      <img src="./assets/images/ZM1.jpg" alt="ZynX Logo" class="zynx-logo">
+    </div>
+    
+    
+    <div id="menu-info-button" class="bar-button info-button" title="Updates">
+      <i class="fas fa-info-circle"></i>
+      <div class="text"><span>Info</span></div>
+    </div>
+    <div id="menu-display-center">
+       
+        <div class="control-bar">
+        
+          <div class="bar-button-container bar-bgs">
+            <div class="bar-button-bg left settings"></div>
+            <div class="bar-button-bg center dummy"></div>
+            <div class="bar-button-bg right play"></div>
+            <div class="bar-button-bg right spectate"></div>
+            <div class="bar-button-bg right inputs"></div>
+          </div>
+
+          
+          <div class="bar-button-container bar-buttons">
+            <div class="bar-button" id="open-settings">
+              <i class="fas fa-cog"></i>
+              <div class="text"><span>Settings</span></div>
+            </div>
+  
+            
+
+            <div class="bar-button" id="spectate">
+              <i class="fa-solid fa-eye"></i>
+              <div class="text"><span>Spectate</span></div>
+            </div>
+
+  
+            <div class="bar-button" id="play">
+              <i class="fas fa-play"></i>
+              <div class="text"><span>Play</span></div>
+            </div>
+
+            
+            <div class="bar-button" id="restart">
+              <i class="fas fa-redo-alt"></i>
+              <div class="text"><span>Re</span></div>
+            </div>
+          </div>
+
+          <div class="bar-circle-outer">
+            <div class="bar-circle">
+              <div class="skin-preview" id="skin-preview"></div>
+            </div>
+          </div>
+        </div>
+      <div class="menu-container">
+          <div class="player-inputs">
+            <input id="tag" class="form-control input-tag" placeholder="Tag" maxlength="5">
+            <input id="nickname" class="form-control input-nickname" placeholder="Nickname" maxlength="15">
+            <input id="nickname2" class="form-control input-nickname" placeholder="Nickname 2" maxlength="15">
+            <div class="skin-row">
+              <input id="customSkin1" class="form-control input-skin" placeholder="Skin1 URL" maxlength="300">
+              <input id="customSkin2" class="form-control input-skin" placeholder="Skin2 URL" maxlength="300">
+            </div>
+          </div>
+        <div class="server-select">
+          <select class="server-select-input" id="servers">
+            <option value="wss://eu.senpa.io:2001/" selected>[EU FFA] Nemesis</option>
+            <option value="wss://eu.senpa.io:5002/">[EU] selfish</option>
+          </select>   
+        </div>
+        <!-- info-panel moved out of menu to avoid being hidden by menu DOM changes -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings Display -->
+  <div id="settings-display" class="pointer-events-all hidden">
+    <div id="settings-display-center">
+      <div id="settings">
+        <div id="settings-close-btn">✘</div>
+        <div id="settings-container">
+          <div class="tabs">
+            <div class="tab active" data-tab="game-settings"><i class="fas fa-cog"></i>Game</div>
+            <div class="tab" data-tab="controls"><i class="fas fa-keyboard"></i>Controls</div>
+            <div class="tab" data-tab="mouse"><i class="fas fa-mouse"></i>Mouse</div>
+          </div>
+          <div class="tabs-container">
+            <div class="tab-content active" id="game-settings">
+              <div class="option">
+                <span>Animation delay: <span class="slider-value" id="animationDelayValue">25</span></span>
+                <input type="range" class="setting-slider" id="animationDelay" min="1" max="300" value="25">
+              </div>
+              <div class="option">
+                <span>Cell transparency: <span class="slider-value" id="cellTransparencyValue">1</span></span>
+                <input type="range" class="setting-slider" id="cellTransparency" min="0.2" max="1" value="1" step="0.1">
+              </div>
+               <div class="option">
+                 <span>Multibox Ring Color:</span>
+                 <input type="color" id="multiboxRingColor" value="#0a414e">
+              </div>
+              <div class="option">
+                   <span>Cell Color</span>
+                   <input type="color" id="cellColorSelect" value="#0a414e">
+                   <button id="cellColorDefaultBtn">Default</button>
+              </div>
+
+              <div class="option">
+                <span>Nicknames:</span>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="showNicknames">
+                  <span class="slider"></span>
+                </label>
+              </div>
+              <div class="option">
+                <span>Mass:</span>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="showMass">
+                  <span class="slider"></span>
+                </label>
+              </div>
+              <div class="option">
+                <span>Skins:</span>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="showSkins">
+                  <span class="slider"></span>
+                </label>
+              </div>
+              <div class="option">
+                <span>Grid:</span>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="showGrid">
+                  <span class="slider"></span>
+                </label>
+              </div>
+              <div class="option">
+                <span>Sectors:</span>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="showSectors">
+                  <span class="slider"></span>
+                </label>
+              </div>
+              <div class="option">
+                <span>Show pellets:</span>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="showPellets">
+                  <span class="slider"></span>
+                </label>
+              </div>
+  			      <div class="option">
+                <span>Cursor tracker:</span>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="showCursorLines">
+                  <span class="slider"></span>
+                </label>
+              </div>
+              <div class="option" id="cursorLinesColorOption" style="display: none;">
+                <span>Cursor line color:</span>
+                <input type="color" id="cursorLinesColor" value="#FFFFFF">
+              </div>
+              <div class="option">
+                <span>Debug mode:</span>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="showDebug">
+                  <span class="slider"></span>
+                </label>
+              </div>
+<label for="name">Enter your bg:</label>
+<input type="text" id="BACKGROUND" name="BACKGROUND" placeholder="PUT A LINK" />
+            </div>
+            <div class="tab-content" id="controls">
+              <div class="option">
+                <span>Macro feed:</span>
+                <input id="macroFeedKey" class="hotkey-input" value="KeyE" maxlength="1" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+              </div>
+              <div class="option">
+                <span>Split:</span>
+                <input id="splitKey" class="hotkey-input" value="Space" maxlength="1" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+              </div>
+              <div class="option">
+                <span>Doublesplit:</span>
+                <input id="doubleSplitKey" class="hotkey-input" value="KeyQ" maxlength="1" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+              </div>
+              <div class="option">
+                <span>Tricksplit:</span>
+                <input id="tricksplitKey" class="hotkey-input" value="ShiftLeft" maxlength="1" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+              </div>
+              <div class="option">
+                <span>Switch player:</span>
+                <input id="switchPlayerkey" class="hotkey-input" value="Tab" maxlength="1" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+              </div>
+              <div class="option">
+                <span>Toggle background:</span>
+                <input id="toggleBackgroundKey" class="hotkey-input" value="KeyB" maxlength="1" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+              </div>
+              <div class = "option">
+                <span>Toggle ChatHud:</span>
+               <input id="toggleChatHUDKey" class="hotkey-input" value="KeyP" maxlength="1" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+           </div>
+                 
+            </div>
+            <div class="tab-content" id="mouse">
+              <div class="option">
+                <span>Left click:</span>
+                <select class="mouseActions" id="leftClick">
+                  <option value="noAction">No action</option>
+                  <option value="macroFeed">Macro Feed</option>
+                  <option value="split">Split</option>
+                  <option value="doubleSplit">Doublesplit</option>
+                  <option selected value="tricksplit">Tricksplit</option>
+                  <option value="switchPlayer">Switch player</option>
+                </select>
+              </div>
+              <div class="option">
+                <span>Middle click:</span>
+                <select class="mouseActions" id="middleClick">
+                  <option selected value="noAction">No action</option>
+                  <option value="macroFeed">Macro Feed</option>
+                  <option value="split">Split</option>
+                  <option value="doubleSplit">Doublesplit</option>
+                  <option value="tricksplit">Tricksplit</option>
+                  <option value="switchPlayer">Switch player</option>
+                </select>
+              </div>
+              <div class="option">
+                <span>Right click:</span>
+                <select class="mouseActions" id="rightClick">
+                  <option selected value="noAction">No action</option>
+                  <option value="macroFeed">Macro Feed</option>
+                  <option value="split">Split</option>
+                  <option value="doubleSplit">Doublesplit</option>
+                  <option value="tricksplit">Tricksplit</option>
+                  <option value="switchPlayer">Switch player</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+   </div>
+
+  <!-- Gallery Display -->
+  <div id="gallery-display" class="pointer-events-all hidden">
+    <div id="gallery-display-center">
+      <div id="gallery">
+        <div id="settings-close-btn">✘</div>
+      </div>
+    </div>
+  </div>
+
+ 
+  <script>
+    window.toastr = window.toastr || {};
+    window.toastr.options = {
+      closeButton: true,
+      debug: false,
+      newestOnTop: false,
+      progressBar: true,
+      positionClass: 'toast-top-center',
+      preventDuplicates: false,
+      showDuration: '1000',
+      hideDuration: '1000',
+      timeOut: '5000',
+      extendedTimeOut: '1000',
+      showEasing: 'swing',
+      hideEasing: 'linear',
+      showMethod: 'fadeIn',
+      hideMethod: 'fadeOut',
+    };
+
+  </script>
+    <script>
+(function () {
+    let lastVal1 = "";
+    let lastVal2 = "";
+
+    function syncSkin1() {
+      const skinInput = document.getElementById('customSkin1');
+      const skinPreview = document.getElementById('skin-preview');
+
+      if (!skinInput || !skinPreview) return;
+
+      const value = (skinInput.value || "").trim();
+      if (value === lastVal1) return;
+
+      lastVal1 = value;
+      
+      skinPreview.style.setProperty('--skin1-url', value ? `url("${value}")` : 'none');
+
+     
+      try { localStorage.setItem('customSkin1', value); } catch (e) {}
+
+      try {
+        if (window.app) window.app.playerInfo.customSkin1 = value || null;
+        if (window.skins && value) window.skins.setOrGetSkin(value);
+      } catch (e) {
+        console.warn('syncSkin1 error', e);
+      }
+    }
+
+    function syncSkin2() {
+      const skinInput = document.getElementById('customSkin2');
+      const skinPreview = document.getElementById('skin-preview');
+      if (!skinInput || !skinPreview) return;
+
+      const value = (skinInput.value || "").trim();
+      if (value === lastVal2) return;
+
+      lastVal2 = value;
+
+      skinPreview.style.setProperty('--skin2-url', value ? `url("${value}")` : 'none');
+
+
+      try { localStorage.setItem('customSkin2', value); } catch (e) {}
+ager
+      try {
+        if (window.app) window.app.playerInfo.customSkin2 = value || null;
+        if (window.skins && value) window.skins.setOrGetSkin(value);
+      } catch (e) {
+        console.warn('syncSkin2 error', e);
+      }
+    }
+
+    window.addEventListener("DOMContentLoaded", () => {
+        const savedSkin1 = localStorage.getItem('customSkin1');
+        if (savedSkin1) {
+          const skinInput = document.getElementById('customSkin1');
+          if (skinInput) skinInput.value = savedSkin1;
+          lastVal1 = savedSkin1;
+          const skinPreview = document.getElementById('skin-preview');
+          if (skinPreview) {
+            skinPreview.style.setProperty('--skin1-url', `url("${savedSkin1}")`);
+          }
+        }
+
+        const savedSkin2 = localStorage.getItem('customSkin2');
+        if (savedSkin2) {
+          const skinInput2 = document.getElementById('customSkin2');
+          if (skinInput2) skinInput2.value = savedSkin2;
+          lastVal2 = savedSkin2;
+          const skinPreview = document.getElementById('skin-preview');
+          if (skinPreview) {
+            skinPreview.style.setProperty('--skin2-url', `url("${savedSkin2}")`);
+          }
+        }
+
+        const applySkinsToApp = () => {
+          if (window.app && window.skins) {
+            if (savedSkin1) {
+              window.app.playerInfo.customSkin1 = savedSkin1;
+              window.skins.setOrGetSkin(savedSkin1);
+            }
+            if (savedSkin2) {
+              window.app.playerInfo.customSkin2 = savedSkin2;
+              window.skins.setOrGetSkin(savedSkin2);
+            }
+          } else {
+            
+            setTimeout(applySkinsToApp, 100);
+          }
+        };
+        
+       
+        setTimeout(applySkinsToApp, 100);
+    });
+
+
+    let skin1Timer = null, skin2Timer = null;
+    document.addEventListener("input", (e) => {
+      if (!e.target) return;
+      if (e.target.id === "customSkin1") {
+        clearTimeout(skin1Timer);
+        skin1Timer = setTimeout(syncSkin1, 300);
+      }
+      if (e.target.id === "customSkin2") {
+        clearTimeout(skin2Timer);
+        skin2Timer = setTimeout(syncSkin2, 300);
+      }
+    });
+
+    document.addEventListener("change", (e) => {
+      if (!e.target) return;
+      if (e.target.id === "customSkin1") syncSkin1();
+      if (e.target.id === "customSkin2") syncSkin2();
+    });
+
+   
+    setInterval(() => { syncSkin1(); syncSkin2(); }, 2000);
+
+
+    syncSkin1();
+    syncSkin2();
+})();
+
+
+  </script>
+  <script>
+  (function () {
+    
+    const checkboxMap = {
+      toggleNicknamesKey: 'showNicknames',
+      toggleMassKey: 'showMass',
+      toggleSkinsKey: 'showSkins',
+      toggleGridKey: 'showGrid',
+      toggleSectorsKey: 'showSectors',
+      toggleChatKey: 'showChat'
+    };
+
+    const keyBindings = {};
+
+    
+    Object.entries(checkboxMap).forEach(([inputId, checkboxId]) => {
+      const input = document.getElementById(inputId);
+      if (!input) return;
+
+ 
+      keyBindings[inputId] = input.value;
+
+     
+      input.addEventListener('focus', () => {
+        input.dataset.capturing = '1';
+        input.value = 'Press key...';
+      });
+  
+      input.addEventListener('blur', () => {
+        if (input.dataset.capturing === '1') {
+          input.dataset.capturing = '';
+          input.value = keyBindings[inputId] || '';
+        }
+      });
+  
+      input.addEventListener('keydown', (e) => {
+        e.preventDefault();
+        keyBindings[inputId] = e.code; 
+        input.value = e.code;
+        input.dataset.capturing = '';
+        input.blur();
+      });
+    });
+  
+    window.addEventListener('keydown', (e) => {
+
+      const tag = e.target.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || e.target.isContentEditable) return;
+
+      for (const [inputId, checkboxId] of Object.entries(checkboxMap)) {
+        const bind = keyBindings[inputId];
+        if (bind && e.code === bind) {
+          const cb = document.getElementById(checkboxId);
+          if (!cb) continue;
+  
+          cb.checked = !cb.checked;
+        
+          cb.dispatchEvent(new Event('change', { bubbles: true }));
+
+          e.preventDefault();
+          break;
+        }
+      }
+    });
+  })();
+  </script>  
+
+  <script>
+    (function initInfoUI() {
+      function createPanelIfMissing() {
+        let panel = document.getElementById('info-panel');
+        if (panel) return panel;
+        panel = document.createElement('div');
+        panel.id = 'info-panel';
+        panel.className = 'info-panel hidden';
+        panel.innerHTML = `
+          <div class="info-panel-close" id="info-panel-close">✕</div>
+          <h3>Recent Updates (applied for you)</h3>
+          <div id="info-owner" class="info-owner"></div>
+          <div class="info-tabs" role="tablist" aria-label="Updates tabs">
+            <button class="info-tab-btn active" type="button" data-tab="small">Small Updates</button>
+            <button class="info-tab-btn" type="button" data-tab="old">Old Updates</button>
+          </div>
+          <div class="info-tab-content active" data-tab-content="small" role="tabpanel">
+            <ul>
+              <li>Cursor + cell delay issues have been fixed.</li>
+              <li>Cursor lines are centered on your cell, and you can change the cursor line color when you enable Cursor Lines.</li>
+              <li>Chat HUD restyled: compact, transparent black glass theme.</li>
+              <li>Join notification added: <strong>{name} has joined the chat</strong> (best-effort client-side).</li>
+            </ul>
+          </div>
+          <div class="info-tab-content" data-tab-content="old" role="tabpanel">
+            <ul>
+              <li>Double-buffered renderer to reduce cell flicker.</li>
+              <li>Debounced resize, cached DOM and measureText to improve performance.</li>
+              <li>Reduced per-frame allocations and optimized rendering loops.</li>
+              <li>Settings persistence with debounced saves and sensible defaults.</li>
+              <li>Cursor tracker feature: draw line from your cells to cursor (toggleable).</li>
+              <li>Throttled/coalesced cursor sends to lower network/ping spikes.</li>
+              <li>Ping display (top-left) using accurate RTT measurement (fetch + performance.now).</li>
+              <li>Skin inputs fixed: persisted, preloaded, and applied to player info.</li>
+            </ul>
+          </div>
+          <div class="info-footer">Updates applied at your request.</div>
+        `;
+        document.body.appendChild(panel);
+        return panel;
+      }
+
+      function initPanelTabs(panel) {
+        const btns = Array.from(panel.querySelectorAll('.info-tab-btn'));
+        const contents = Array.from(panel.querySelectorAll('.info-tab-content'));
+        if (!btns.length || !contents.length) return;
+
+        function setActive(tab) {
+          btns.forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+          contents.forEach(c => c.classList.toggle('active', c.dataset.tabContent === tab));
+        }
+
+        btns.forEach(btn => {
+          btn.addEventListener('click', () => setActive(btn.dataset.tab));
+        });
+
+        const initial = (btns.find(b => b.classList.contains('active'))?.dataset.tab) || btns[0].dataset.tab;
+        setActive(initial);
+      }
+
+      function setup() {
+        const infoBtn = document.getElementById('menu-info-button') || document.querySelector('.info-button');
+        const panel = createPanelIfMissing();
+        const closeBtn = document.getElementById('info-panel-close');
+        const nick = document.getElementById('nickname');
+        const ownerEl = document.getElementById('info-owner');
+        const menu = document.getElementById('menu-display');
+
+        initPanelTabs(panel);
+
+        if (ownerEl) {
+          ownerEl.style.fontSize = '12px';
+          ownerEl.style.opacity = '0.9';
+          ownerEl.style.marginBottom = '8px';
+          ownerEl.textContent = (nick && nick.value && nick.value.trim()) ? ('For: ' + nick.value.trim()) : 'For: You';
+        }
+
+        panel.style.display = 'none';
+        panel.style.zIndex = 99999;
+
+        if (infoBtn) {
+          infoBtn.style.zIndex = 100000;
+          infoBtn.style.pointerEvents = 'auto';
+          infoBtn.addEventListener('click', function (e) {
+            e.stopPropagation();
+            const isHidden = (panel.style.display === 'none' || getComputedStyle(panel).display === 'none');
+            if (isHidden) {
+              panel.style.display = 'block';
+              panel.classList.remove('hidden');
+              panel.style.opacity = '1';
+              panel.style.visibility = 'visible';
+            } else {
+              panel.style.display = 'none';
+              panel.classList.add('hidden');
+            }
+            console.log('Info panel post-toggle style:', panel.style.display, 'computed:', getComputedStyle(panel).display);
+          });
+        }
+
+        if (closeBtn) {
+          closeBtn.addEventListener('click', function (e) {
+            e.stopPropagation();
+            panel.style.display = 'none';
+            panel.classList.add('hidden');
+            console.log('Info panel close clicked');
+          });
+        }
+
+        if (menu) {
+          const obs = new MutationObserver(function () {
+            const visible = menu.classList.contains('visible');
+            if (!visible) {
+              panel.style.display = 'none';
+              if (infoBtn) infoBtn.style.display = 'none';
+            } else {
+              if (infoBtn) infoBtn.style.display = '';
+            }
+          });
+          obs.observe(menu, { attributes: true, attributeFilter: ['class'] });
+          if (!menu.classList.contains('visible') && infoBtn) infoBtn.style.display = 'none';
+        }
+
+        if (nick && ownerEl) {
+          nick.addEventListener('input', function () {
+            ownerEl.textContent = nick.value.trim() ? ('For: ' + nick.value.trim()) : 'For: You';
+          });
+        }
+      }
+
+      if (document.readyState === 'complete') {
+        setup();
+      } else {
+        window.addEventListener('load', setup);
+        // also try a delayed attempt in case some scripts block
+        setTimeout(() => { try { setup(); } catch (e) {} }, 1200);
+      }
+    })();
+  </script>
+
+
+</body>
+</html>
