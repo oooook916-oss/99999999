@@ -31,7 +31,6 @@
             setTimeout(connect, 3000); // إعادة اتصال تلقائي
         };
     }
-
  function addChatMessage(data) {
         const chatUI = qs('#chat-content') || qs('.chat-list') || qs('#messages');
         if (!chatUI) return;
