@@ -1,7 +1,7 @@
 (function () {
   'use strict';
 
-  const WS_CONFIG = { CHAT: 'https://atl-clan1.onrender.com' };
+  const WS_CONFIG = { CHAT: 'wss://atl-clan1.onrender.com' };
 
   const qs = (s, r = document) => r.querySelector(s);
   const getText = e => (e && 'value' in e) ? String(e.value) : '';
