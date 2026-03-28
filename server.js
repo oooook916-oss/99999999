@@ -1,19 +1,26 @@
-const WebSocket = require('');
-const PORT = process.env.PORT || 3000;
+const express = require('express');
+const http = require('http');
+const WebSocket = require('ws');
+const path = require('path');
 
-const wss = new WebSocket.Server({ port: PORT });
+const app = express();
+const server = http.createServer(app);
+const wss = new WebSocket.Server({ server });
+
+// تشغيل ملفات اللعبة (الواجهة)
+app.use(express.static(path.join(__dirname, '/')));
 
 wss.on('connection', (ws) => {
-    console.log('لاعب جديد اتصل بالشات');
+    ws.on('message', (message) => {
+        let data = JSON.parse(message);
+        // نظام الأدمن ROSH
+        if (data.nick === "ROSH") { data.isAdmin = true; }
 
-    ws.on('message', (data) => {
-        // توزيع الرسالة على كل اللاعبين المتصلين
-        wss.clients.forEach((client) => {
-            if (client.readyState === WebSocket.OPEN) {
-                client.send(data);
-            }
+        wss.clients.forEach(client => {
+            if (client.readyState === WebSocket.OPEN) client.send(JSON.stringify(data));
         });
     });
 });
 
-console.log(`سيرفر الشات يعمل على المنفذ ${PORT}`);
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => console.log(`Game and Server running on port ${PORT}`));
