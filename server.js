@@ -1,21 +1,25 @@
+const express = require('express');
+const http = require('http');
 const WebSocket = require('ws');
-const PORT = process.env.PORT || 3000;
-const wss = new WebSocket.Server({ port: PORT });
+const path = require('path');
+
+const app = express();
+const server = http.createServer(app);
+const wss = new WebSocket.Server({ server });
+
+// تشغيل ملفات اللعبة (الواجهة) من المجلد الرئيسي
+app.use(express.static(__dirname));
 
 wss.on('connection', (ws) => {
-    console.log('لاعب جديد اتصل بالشات');
-
-    ws.on('message', (data) => {
-        // تحويل الرسالة المستلمة إلى نص
-        const message = data.toString();
-        
-        // توزيع الرسالة على كل اللاعبين المتصلين حالياً
+    ws.on('message', (message) => {
+        // توزيع الرسائل على الكل
         wss.clients.forEach((client) => {
             if (client.readyState === WebSocket.OPEN) {
-                client.send(message);
+                client.send(message.toString());
             }
         });
     });
 });
 
-console.log(`سيرفر الشات يعمل على المنفذ ${PORT}`);
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => console.log(`Game is running on port ${PORT}`));
