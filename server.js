@@ -1,4 +1,4 @@
-const WebSocket = require('https://atl-clan1.onrender.com');
+const WebSocket = require('');
 const PORT = process.env.PORT || 3000;
 
 const wss = new WebSocket.Server({ port: PORT });
